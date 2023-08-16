@@ -1,24 +1,24 @@
 use thiserror::Error;
 
-use super::types::{NodeId, Timestamp};
+use super::types::{Timestamp, TxId};
 
 #[derive(Debug)]
-pub struct Node {
-    pub left: NodeId,
-    pub right: NodeId,
+pub struct Transaction {
+    pub left: TxId,
+    pub right: TxId,
     pub timestamp: Timestamp,
 }
 
 #[derive(Error, Debug)]
-pub enum ParseNodeError {
+pub enum ParseTxError {
     #[error("parse int error: {0}")]
     ParseIntError(#[from] std::num::ParseIntError),
     #[error("wrong fields number: expected '{0}', actual '{1}")]
     WrongFieldsNumberError(usize, usize),
 }
 
-impl std::str::FromStr for Node {
-    type Err = ParseNodeError;
+impl std::str::FromStr for Transaction {
+    type Err = ParseTxError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         const EXPECTED_FIELDS_NUMBER: usize = 3;
@@ -27,15 +27,15 @@ impl std::str::FromStr for Node {
         let fields_number = fields.len();
 
         if EXPECTED_FIELDS_NUMBER != fields_number {
-            return Err(ParseNodeError::WrongFieldsNumberError(
+            return Err(ParseTxError::WrongFieldsNumberError(
                 EXPECTED_FIELDS_NUMBER,
                 fields_number,
             ));
         }
 
-        Ok(Node {
-            left: fields[0].parse::<NodeId>()?,
-            right: fields[1].parse::<NodeId>()?,
+        Ok(Transaction {
+            left: fields[0].parse::<TxId>()?,
+            right: fields[1].parse::<TxId>()?,
             timestamp: fields[2].parse::<Timestamp>()?,
         })
     }

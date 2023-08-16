@@ -1,39 +1,50 @@
 mod error;
-mod node;
+mod graph;
+mod transaction;
 mod types;
 
 pub use self::error::LedgerError;
 
 pub type Result<T> = std::result::Result<T, LedgerError>;
 
+use self::graph::Graph;
+use self::transaction::Transaction;
+use self::types::TxId;
+
 use std::collections::HashMap;
 
-use self::node::Node;
-use self::types::NodeId;
+type Transactions = HashMap<TxId, Transaction>;
 
 pub struct Ledger {
-    nodes: HashMap<NodeId, Node>,
+    transactions: Transactions,
+    graph: Graph,
 }
 
 impl std::fmt::Debug for Ledger {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         writeln!(f, "------------ Ledger ------------")?;
 
-        // Print nodes debug information
-        writeln!(f, "Nodes:")?;
-        writeln!(f, "{}", self.nodes.len())?;
+        let transactions_number = self.transactions.len();
 
-        let mut keys = self.nodes.keys().collect::<Vec<_>>();
+        // Print transactions debug information
+        writeln!(f, "Transactions:")?;
+        writeln!(f, "{transactions_number}")?;
+
+        let mut keys = self.transactions.keys().collect::<Vec<_>>();
         keys.sort();
 
         for key in keys.into_iter() {
-            let node = self.nodes.get(key).expect("the node must be presented");
-            writeln!(
-                f,
-                "{} - {} {} {}",
-                key, node.left, node.right, node.timestamp
-            )?;
+            let tx = self
+                .transactions
+                .get(key)
+                .expect("the transaction must be presented");
+            writeln!(f, "{} - {} {} {}", key, tx.left, tx.right, tx.timestamp)?;
         }
+
+        // Print graph debug information
+        writeln!(f)?;
+        writeln!(f, "Graph:")?;
+        writeln!(f, "{:?}", self.graph)?;
 
         writeln!(f, "--------------------------------")
     }
@@ -49,19 +60,39 @@ impl Ledger {
     }
 
     pub fn avg_ref(&self) -> f32 {
-        0.0
+        let mut sum = 0;
+
+        let size = self.graph.size();
+        let end = size + 1;
+
+        for i in 1..end {
+            for j in 1..end {
+                if let Some(element) = self.graph.get(i, j) {
+                    sum += element.references;
+                }
+            }
+        }
+
+        sum as f32 / size as f32
     }
 
-    fn build(nodes: HashMap<NodeId, Node>) -> Result<Self> {
-        let graph = Self { nodes };
+    fn build(transactions: Transactions) -> Self {
+        let graph = Self::build_graph(&transactions);
 
-        graph.validate()?;
-
-        Ok(graph)
+        Self {
+            transactions,
+            graph,
+        }
     }
 
-    fn validate(&self) -> Result<()> {
-        Ok(())
+    fn build_graph(transactions: &Transactions) -> Graph {
+        let mut adjacency_matrix = Graph::new(transactions.len() + 1);
+
+        for (id, tx) in transactions {
+            adjacency_matrix.add(*id, tx.left, tx.right);
+        }
+
+        adjacency_matrix
     }
 }
 
@@ -79,33 +110,33 @@ pub fn read_from_db(path: &str) -> Result<Ledger> {
 
     let mut it = lines.iter();
 
-    let expected_nodes_number = it
+    let parsed_transactions_number = it
         .next()
         .expect("the lines collection must contain at least one element")
         .parse::<usize>()
         .map_err(LedgerError::ParseIntError)?;
 
-    let nodes_number = lines.len() - 1;
+    let transactions_number = lines.len() - 1;
 
-    if expected_nodes_number != nodes_number {
-        return Err(LedgerError::WrongNodesNumberError(
-            expected_nodes_number,
-            nodes_number,
+    if parsed_transactions_number != transactions_number {
+        return Err(LedgerError::WrongTxNumberError(
+            parsed_transactions_number,
+            transactions_number,
         ));
     }
 
     // Parse the nodes
-    let nodes: Result<Vec<_>> = it
-        .map(|l| l.parse::<Node>().map_err(LedgerError::ParseNodeError))
+    let transactions: Result<Vec<_>> = it
+        .map(|l| l.parse::<Transaction>().map_err(LedgerError::ParseTxError))
         .collect();
-    let nodes = nodes?;
+    let transactions = transactions?;
 
-    // Create a graph instance
-    let nodes: HashMap<_, _> = nodes
+    // Build a ledger instance
+    let transactions: HashMap<_, _> = transactions
         .into_iter()
         .enumerate()
-        .map(|(i, n)| (i + 2, n))
+        .map(|(i, tx)| (i + 2, tx))
         .collect();
 
-    Ledger::build(nodes)
+    Ok(Ledger::build(transactions))
 }
