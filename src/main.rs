@@ -11,10 +11,13 @@ fn main() -> Result<()> {
 
     let ledger = ledger::read_from_db(&db_file_path)?;
 
-    println!("{DB_FILE_NAME}");
+    println!("----------- Database -----------");
+    println!("{db_file_path}");
+    println!("--------------------------------");
     println!();
 
     println!("{ledger:?}");
+    println!();
 
     println!("------------ Stats -------------");
     println!("AVG DAG DEPTH: {}", ledger.avg_dag_depth());

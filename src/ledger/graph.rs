@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use super::types::TxId;
+use super::transaction::TxId;
 
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq)]
 pub struct Element {
     pub references: u32,
 }
@@ -18,10 +18,8 @@ impl std::fmt::Debug for Graph {
 
         writeln!(f, "{size}")?;
 
-        let end = size + 1;
-
-        for i in 1..end {
-            for j in 1..end {
+        for i in 1..=size {
+            for j in 1..=size {
                 if let Some(element) = self.get(i, j) {
                     write!(f, "{} ", element.references)?;
                 } else {
@@ -50,6 +48,16 @@ impl Graph {
         self.size
     }
 
+    pub fn for_each<F>(&self, mut f: F)
+    where
+        Self: Sized,
+        F: FnMut(&TxId, &TxId, &Element),
+    {
+        self.adjacency_matrix
+            .iter()
+            .for_each(|(i, map)| map.iter().for_each(|(j, e)| f(i, j, e)));
+    }
+
     pub fn get(&self, i: TxId, j: TxId) -> Option<&Element> {
         if !self.is_valid_index(i) || !self.is_valid_index(j) {
             None
@@ -60,7 +68,7 @@ impl Graph {
         }
     }
 
-    pub fn add(&mut self, id: TxId, left: TxId, right: TxId) {
+    pub fn add_ref(&mut self, id: TxId, left: TxId, right: TxId) {
         if !self.is_valid_index(id) || !self.is_valid_index(left) || !self.is_valid_index(right) {
             return;
         }

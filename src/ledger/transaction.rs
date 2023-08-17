@@ -1,6 +1,7 @@
 use thiserror::Error;
 
-use super::types::{Timestamp, TxId};
+type Timestamp = u64;
+pub type TxId = usize;
 
 #[derive(Debug)]
 pub struct Transaction {
