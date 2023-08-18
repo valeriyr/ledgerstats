@@ -6,15 +6,17 @@ use itertools::Itertools;
 
 pub use self::error::LedgerError;
 
-/// Type alias for the leger module result.
+/// Type alias for the ledger module result.
 pub type Result<T> = std::result::Result<T, LedgerError>;
 
-use self::graph::{Depth, Graph, Transactions};
-use self::transaction::Transaction;
+use self::graph::{Depth, Graph};
+
+pub use self::graph::Transactions;
+pub use self::transaction::{Timestamp, Transaction, TxId};
 
 use std::collections::HashMap;
 
-/// A leger implementation.
+/// A ledger implementation.
 pub struct Ledger {
     /// The list of raw transactions.
     transactions: Transactions,
@@ -46,7 +48,7 @@ impl std::fmt::Debug for Ledger {
 
 impl Ledger {
     /// Creates a new `Ledger`instance.
-    fn new(transactions: Transactions) -> Self {
+    pub fn new(transactions: Transactions) -> Self {
         let graph = Graph::new(&transactions);
 
         Self {

@@ -11,6 +11,9 @@ pub type Depths = HashMap<TxId, Depth>;
 /// Type alias for transactions list.
 pub type Transactions = HashMap<TxId, Transaction>;
 
+/// Type alias for adjacency matrix.
+type AdjacencyMatrix = HashMap<TxId, HashMap<TxId, Element>>;
+
 /// An adjacency matrix element type.
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq)]
 pub struct Element {
@@ -18,12 +21,20 @@ pub struct Element {
     pub references: u32,
 }
 
+impl Element {
+    /// Creates a new `Element` instance.
+    #[cfg(test)]
+    pub fn new(references: u32) -> Self {
+        Self { references }
+    }
+}
+
 /// A transactions graph implementation.
 pub struct Graph {
     /// The adjacency matrix size.
     size: usize,
     /// The adjacency matrix.
-    adjacency_matrix: HashMap<TxId, HashMap<TxId, Element>>,
+    adjacency_matrix: AdjacencyMatrix,
     /// The information about depths.
     depths: Depths,
 }
@@ -133,7 +144,7 @@ impl Graph {
 
     /// Checks if the provided index is valid.
     fn is_valid_index(&self, index: TxId) -> bool {
-        index > 0 || index <= self.size()
+        index > 0 && index <= self.size()
     }
 
     /// Calculates the depths.
@@ -169,5 +180,66 @@ impl Graph {
 
             *self.depths.entry(i).or_default() = depth;
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn empty_transactions_list() {
+        let transactions = Transactions::new();
+        let graph = Graph::new(&transactions);
+
+        assert_eq!(graph.size(), 1);
+
+        assert_eq!(graph.get(0, 0), None);
+        assert_eq!(graph.get(0, 1), None);
+        assert_eq!(graph.get(1, 1), None);
+        assert_eq!(graph.get(1, 2), None);
+
+        assert_eq!(*graph.depths(), Depths::from([(1, 0)]));
+
+        assert_eq!(graph.is_valid_index(0), false);
+        assert_eq!(graph.is_valid_index(1), true);
+        assert_eq!(graph.is_valid_index(2), false);
+    }
+
+    #[test]
+    fn sample_transactions_list() {
+        let mut transactions = Transactions::new();
+
+        transactions.insert(2, Transaction::new(1, 1, 0));
+        transactions.insert(3, Transaction::new(1, 2, 0));
+        transactions.insert(4, Transaction::new(2, 2, 1));
+        transactions.insert(5, Transaction::new(3, 3, 2));
+        transactions.insert(6, Transaction::new(3, 4, 3));
+
+        let graph = Graph::new(&transactions);
+
+        assert_eq!(graph.size(), 6);
+
+        let mut adjacency_matrix = AdjacencyMatrix::new();
+
+        adjacency_matrix.insert(2, HashMap::from([(1, Element::new(2))]));
+        #[rustfmt::skip]
+        adjacency_matrix.insert(3, HashMap::from([(1, Element::new(1)), (2, Element::new(1))]));
+        adjacency_matrix.insert(4, HashMap::from([(2, Element::new(2))]));
+        adjacency_matrix.insert(5, HashMap::from([(3, Element::new(2))]));
+        #[rustfmt::skip]
+        adjacency_matrix.insert(6, HashMap::from([(3, Element::new(1)), (4, Element::new(1))]));
+
+        assert_eq!(graph.adjacency_matrix, adjacency_matrix);
+
+        assert_eq!(
+            *graph.depths(),
+            Depths::from([(1, 0), (2, 1), (3, 1), (4, 2), (5, 2), (6, 2)])
+        );
+
+        assert_eq!(graph.is_valid_index(0), false);
+        assert_eq!(graph.is_valid_index(1), true);
+        assert_eq!(graph.is_valid_index(6), true);
+        assert_eq!(graph.is_valid_index(7), false);
     }
 }

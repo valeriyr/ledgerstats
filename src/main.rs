@@ -9,9 +9,9 @@
 #[macro_use]
 extern crate clap;
 
-mod ledger;
-
 use anyhow::Result;
+
+use ledgerstats::ledger;
 
 /// A file path with a sample list of transactions.
 const DEFAULT_DB_FILE_PATH: &str = "./database.txt";
