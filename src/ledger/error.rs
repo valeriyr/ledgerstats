@@ -1,7 +1,7 @@
 use thiserror::Error;
 
 /// Contains all possible errors of the ledger module.
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Clone, Eq, PartialEq)]
 pub enum LedgerError {
     #[error("the database is empty")]
     EmptyDatabase,
@@ -9,8 +9,6 @@ pub enum LedgerError {
     ParseIntError(#[from] std::num::ParseIntError),
     #[error("parse transaction error: {0}")]
     ParseTxError(#[from] super::transaction::ParseTxError),
-    #[error("std io error: {0}")]
-    StdIoError(#[from] std::io::Error),
     #[error("wrong transactions number: expected '{0}', actual '{1}")]
     WrongTxNumberError(usize, usize),
 }

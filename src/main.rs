@@ -11,7 +11,7 @@ extern crate clap;
 
 use anyhow::Result;
 
-use ledgerstats::ledger;
+use ledgerstats::ledger::{self, Ledger};
 
 /// A file path with a sample list of transactions.
 const DEFAULT_DB_FILE_PATH: &str = "./database.txt";
@@ -29,7 +29,11 @@ fn main() -> Result<()> {
         .value_of("DB_FILE_PATH")
         .unwrap_or(DEFAULT_DB_FILE_PATH);
 
-    let ledger = ledger::read_from_db(db_file_path)?;
+    let database = std::fs::read_to_string(db_file_path)?;
+
+    let transactions = ledger::read_txs_from_db(&database)?;
+
+    let ledger = Ledger::new(transactions);
 
     println!("----------- Database -----------");
     println!("{db_file_path}");

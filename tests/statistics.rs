@@ -1,7 +1,7 @@
 use ledgerstats::ledger::{Ledger, Transaction, Transactions};
 
 #[test]
-fn sample_test() {
+fn sample_statistics() {
     let mut transactions = Transactions::new();
 
     transactions.insert(2, Transaction::new(1, 1, 0));

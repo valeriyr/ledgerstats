@@ -12,7 +12,7 @@ pub type Result<T> = std::result::Result<T, LedgerError>;
 use self::graph::{Depth, Graph};
 
 pub use self::graph::Transactions;
-pub use self::transaction::{Timestamp, Transaction, TxId};
+pub use self::transaction::{ParseTxError, Timestamp, Transaction, TxId};
 
 use std::collections::HashMap;
 
@@ -91,15 +91,11 @@ impl Ledger {
     }
 }
 
-/// Reads the provided database file and creates a `Ledger` instance.
-pub fn read_from_db(path: &str) -> Result<Ledger> {
-    // Read the database file
-    let lines = std::fs::read_to_string(path)?
-        .lines()
-        .map(String::from)
-        .collect::<Vec<_>>();
-
+/// Reads the provided database and returns a transactions list.
+pub fn read_txs_from_db(database: &str) -> Result<Transactions> {
     // Basic content checking
+    let lines = database.lines().map(String::from).collect::<Vec<_>>();
+
     if lines.is_empty() {
         return Err(LedgerError::EmptyDatabase);
     }
@@ -121,18 +117,17 @@ pub fn read_from_db(path: &str) -> Result<Ledger> {
         ));
     }
 
-    // Parse the nodes
+    // Parse the transactions
     let transactions: Result<Vec<_>> = it
         .map(|l| l.parse::<Transaction>().map_err(LedgerError::ParseTxError))
         .collect();
     let transactions = transactions?;
 
-    // Build a ledger instance
     let transactions: HashMap<_, _> = transactions
         .into_iter()
         .enumerate()
         .map(|(i, tx)| (i + 2, tx))
         .collect();
 
-    Ok(Ledger::new(transactions))
+    Ok(transactions)
 }

@@ -97,24 +97,24 @@ mod tests {
     #[test]
     fn wrong_left_parent_field() {
         assert!(matches!(
-            Transaction::from_str("-1 2 3"),
-            Err(ParseTxError::ParseIntError(_))
+            Transaction::from_str("-1 2 3").unwrap_err(),
+            ParseTxError::ParseIntError(_)
         ));
     }
 
     #[test]
     fn wrong_right_parent_field() {
         assert!(matches!(
-            Transaction::from_str("1 O 3"),
-            Err(ParseTxError::ParseIntError(_))
+            Transaction::from_str("1 O 3").unwrap_err(),
+            ParseTxError::ParseIntError(_)
         ));
     }
 
     #[test]
     fn wrong_timestamp_field() {
         assert!(matches!(
-            Transaction::from_str("1 2 🦀"),
-            Err(ParseTxError::ParseIntError(_))
+            Transaction::from_str("1 2 🦀").unwrap_err(),
+            ParseTxError::ParseIntError(_)
         ));
     }
 }
