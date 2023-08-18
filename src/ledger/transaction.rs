@@ -1,16 +1,24 @@
 use thiserror::Error;
 
+/// Type alias for timestamp.
 type Timestamp = u64;
+/// Type alias for transaction id.
 pub type TxId = usize;
 
-#[derive(Debug)]
+/// A transaction in-memory representation.
+/// Can be parsed from the provided transactions database file.
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Transaction {
+    /// The transaction's left parent.
     pub left: TxId,
+    /// The transaction's right parent.
     pub right: TxId,
+    /// The transaction's timestamp.
     pub timestamp: Timestamp,
 }
 
-#[derive(Error, Debug)]
+/// Contains all possible transaction deserialization errors.
+#[derive(Error, Debug, Clone, PartialEq, Eq)]
 pub enum ParseTxError {
     #[error("parse int error: {0}")]
     ParseIntError(#[from] std::num::ParseIntError),

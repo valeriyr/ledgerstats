@@ -15,5 +15,5 @@ cargo build
 # Usage
 
 ```bash
-ledgerstats [db_file_path]
+ledgerstats [DB_FILE_PATH]
 ```

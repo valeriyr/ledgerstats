@@ -1,5 +1,6 @@
 use thiserror::Error;
 
+/// Contains all possible errors of the ledger module.
 #[derive(Error, Debug)]
 pub enum LedgerError {
     #[error("the database is empty")]

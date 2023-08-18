@@ -6,21 +6,20 @@ use itertools::Itertools;
 
 pub use self::error::LedgerError;
 
+/// Type alias for the leger module result.
 pub type Result<T> = std::result::Result<T, LedgerError>;
 
-use self::graph::Graph;
-use self::transaction::{Transaction, TxId};
+use self::graph::{Depth, Graph, Transactions};
+use self::transaction::Transaction;
 
-use std::collections::{HashMap, VecDeque};
+use std::collections::HashMap;
 
-type Depth = usize;
-type Depths = HashMap<TxId, Depth>;
-type Transactions = HashMap<TxId, Transaction>;
-
+/// A leger implementation.
 pub struct Ledger {
+    /// The list of raw transactions.
     transactions: Transactions,
+    /// The transactions graph.
     graph: Graph,
-    depths: Depths,
 }
 
 impl std::fmt::Debug for Ledger {
@@ -39,36 +38,40 @@ impl std::fmt::Debug for Ledger {
 
         // Print graph debug information
         writeln!(f)?;
-        writeln!(f, "Graph:")?;
         writeln!(f, "{:?}", self.graph)?;
-
-        // Print depths debug information
-        writeln!(f)?;
-        writeln!(f, "Depths:")?;
-
-        for (i, depth) in self.depths.iter().sorted_by_key(|(i, _)| *i) {
-            writeln!(f, "{} - {}", i, depth)?;
-        }
 
         write!(f, "--------------------------------")
     }
 }
 
 impl Ledger {
-    pub fn avg_dag_depth(&self) -> f32 {
-        self.depths.values().sum::<Depth>() as f32 / self.graph.size() as f32
+    /// Creates a new `Ledger`instance.
+    fn new(transactions: Transactions) -> Self {
+        let graph = Graph::new(&transactions);
+
+        Self {
+            transactions,
+            graph,
+        }
     }
 
+    /// Returns the average depth of the directed acyclic graph.
+    pub fn avg_dag_depth(&self) -> f32 {
+        self.graph.depths().values().sum::<Depth>() as f32 / self.graph.size() as f32
+    }
+
+    /// Returns the average number of transactions per depth(depth 0 is not included).
     pub fn avg_txs_per_depth(&self) -> f32 {
-        let max_depth = self
-            .depths
+        let depths = self.graph.depths();
+
+        let max_depth = depths
             .values()
             .max()
             .expect("the depths collection can not be empty");
 
         let mut unique_depths_counter: Vec<Depth> = vec![0; max_depth + 1];
 
-        self.depths
+        depths
             .values()
             .filter(|d| **d != 0)
             .for_each(|d| unique_depths_counter[*d] += 1);
@@ -76,6 +79,7 @@ impl Ledger {
         unique_depths_counter.iter().sum::<Depth>() as f32 / *max_depth as f32
     }
 
+    /// Returns the average number of in-references per node.
     pub fn avg_ref(&self) -> f32 {
         let mut sum = 0;
 
@@ -83,66 +87,9 @@ impl Ledger {
 
         sum as f32 / self.graph.size() as f32
     }
-
-    fn build(transactions: Transactions) -> Self {
-        let graph = Self::build_graph(&transactions);
-        let depths = Self::build_depths(&graph);
-
-        Self {
-            transactions,
-            graph,
-            depths,
-        }
-    }
-
-    fn build_graph(transactions: &Transactions) -> Graph {
-        let mut graph = Graph::new(transactions.len() + 1);
-
-        for (id, tx) in transactions {
-            graph.add_ref(*id, tx.left, tx.right);
-        }
-
-        graph
-    }
-
-    fn build_depths(graph: &Graph) -> Depths {
-        let mut path = HashMap::new();
-        let mut queue = VecDeque::new();
-
-        let start = 1;
-
-        path.insert(start, start);
-        queue.push_back(start);
-
-        while !queue.is_empty() {
-            let j = queue.pop_front().expect("the queue can not be empty");
-
-            for i in 1..=graph.size() {
-                if !path.contains_key(&i) && graph.get(i, j).is_some() {
-                    queue.push_back(i);
-                    *path.entry(i).or_default() = j;
-                }
-            }
-        }
-
-        let mut depths = Depths::new();
-
-        for i in 1..=graph.size() {
-            let mut depth = 0;
-            let mut j = i;
-
-            while j != 1 {
-                depth += 1;
-                j = *path.get(&j).expect("the path must be valid");
-            }
-
-            *depths.entry(i).or_default() = depth;
-        }
-
-        depths
-    }
 }
 
+/// Reads the provided database file and creates a `Ledger` instance.
 pub fn read_from_db(path: &str) -> Result<Ledger> {
     // Read the database file
     let lines = std::fs::read_to_string(path)?
@@ -185,5 +132,5 @@ pub fn read_from_db(path: &str) -> Result<Ledger> {
         .map(|(i, tx)| (i + 2, tx))
         .collect();
 
-    Ok(Ledger::build(transactions))
+    Ok(Ledger::new(transactions))
 }
