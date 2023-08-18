@@ -1,6 +1,6 @@
-//! # IOTA ledgerstats
+//! # IOTA ledgerstats application
 //!
-//! IOTA `ledgerstats` parses a given list in memory and returns relevant statistics.
+//! IOTA `ledgerstats` application parses a given transactions list in memory and returns relevant statistics.
 //!
 //!
 
