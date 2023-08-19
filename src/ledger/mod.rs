@@ -71,23 +71,38 @@ impl Ledger {
             .max()
             .expect("the depths collection can not be empty");
 
-        let mut unique_depths_counter: Vec<Depth> = vec![0; max_depth + 1];
-
-        depths
-            .values()
-            .filter(|d| **d != 0)
-            .for_each(|d| unique_depths_counter[*d] += 1);
-
-        unique_depths_counter.iter().sum::<Depth>() as f32 / *max_depth as f32
+        match max_depth {
+            0 => 0.0,
+            _ => depths.values().filter(|d| **d != 0).count() as f32 / *max_depth as f32,
+        }
     }
 
     /// Returns the average number of in-references per node.
     pub fn avg_ref(&self) -> f32 {
-        let mut sum = 0;
+        // TODO: is it possible to have nodes without connection to the graph?
+        // (self.transactions.len() * 2) as f32 / self.graph.size() as f32
 
+        let mut sum = 0;
         self.graph.for_each(|_, _, e| sum += e.references);
 
         sum as f32 / self.graph.size() as f32
+    }
+
+    /// Returns the average number of transactions per timestamp(transaction 1 is not included).
+    pub fn avg_txs_per_ts(&self) -> f32 {
+        let max_timestamp = self
+            .transactions
+            .values()
+            .max_by_key(|t| t.timestamp)
+            .map(|t| t.timestamp);
+
+        match max_timestamp {
+            Some(max_timestamp) => {
+                self.transactions.iter().filter(|(i, _)| **i != 1).count() as f32
+                    / max_timestamp as f32
+            }
+            None => 0.0,
+        }
     }
 }
 

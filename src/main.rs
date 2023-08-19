@@ -20,7 +20,7 @@ fn main() -> Result<()> {
     let matches = clap_app!(ledgerstats =>
         (version: "0.1.0")
         (author: "Valerii Reutov")
-        (about: "IOTA ledgerstats parses a given list in memory and returns relevant statistics")
+        (about: "IOTA ledgerstats application parses a given transactions list in memory and returns relevant statistics.")
         (@arg DB_FILE_PATH: "path to a file containing a list of transactions")
     )
     .get_matches();
@@ -47,6 +47,8 @@ fn main() -> Result<()> {
     println!("AVG DAG DEPTH: {}", ledger.avg_dag_depth());
     println!("AVG TXS PER DEPTH: {}", ledger.avg_txs_per_depth());
     println!("AVG REF: {}", ledger.avg_ref());
+    println!("---");
+    println!("AVG TXS PER TS: {}", ledger.avg_txs_per_ts());
     println!("--------------------------------");
 
     Ok(())

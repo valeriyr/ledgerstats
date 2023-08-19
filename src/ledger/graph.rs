@@ -189,8 +189,7 @@ mod tests {
 
     #[test]
     fn empty_transactions_list() {
-        let transactions = Transactions::new();
-        let graph = Graph::new(&transactions);
+        let graph = Graph::new(&Transactions::new());
 
         assert_eq!(graph.size(), 1);
 
@@ -241,5 +240,24 @@ mod tests {
         assert_eq!(graph.is_valid_index(1), true);
         assert_eq!(graph.is_valid_index(6), true);
         assert_eq!(graph.is_valid_index(7), false);
+    }
+
+    #[test]
+    fn add_ref_to_graph() {
+        let mut graph = Graph::new(&Transactions::new());
+
+        assert_eq!(graph.size(), 1);
+        assert_eq!(graph.get(1, 1), None);
+
+        graph.add_ref(0, 1, 1);
+        graph.add_ref(2, 1, 1);
+
+        assert_eq!(graph.size(), 1);
+        assert_eq!(graph.get(1, 1), None);
+
+        graph.add_ref(1, 1, 1);
+
+        assert_eq!(graph.size(), 1);
+        assert_eq!(graph.get(1, 1).unwrap(), &Element::new(2));
     }
 }
