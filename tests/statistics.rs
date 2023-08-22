@@ -20,9 +20,7 @@ fn sample_statistics() {
 
 #[test]
 fn empty_txs_list_statistics() {
-    let transactions = Transactions::new();
-
-    let ledger = Ledger::new(transactions);
+    let ledger = Ledger::new(Transactions::new());
 
     assert_eq!(ledger.avg_dag_depth(), 0.0);
     assert_eq!(ledger.avg_txs_per_depth(), 0.0);

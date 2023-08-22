@@ -102,11 +102,10 @@ impl Graph {
         self.size
     }
 
-    /// Calls the provided function for each element in the adjacency matrix.
+    /// Calls the function for each element in the adjacency matrix.
     /// The elements will be provided in random order.
     pub fn for_each<F>(&self, mut f: F)
     where
-        Self: Sized,
         F: FnMut(&TxId, &TxId, &Element),
     {
         self.adjacency_matrix
