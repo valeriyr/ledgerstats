@@ -90,19 +90,16 @@ impl Ledger {
 
     /// Returns the average number of transactions per timestamp(transaction 1 is not included).
     pub fn avg_txs_per_ts(&self) -> f32 {
-        let max_timestamp = self
-            .transactions
-            .values()
-            .max_by_key(|t| t.timestamp)
-            .map(|t| t.timestamp);
-
-        match max_timestamp {
-            Some(max_timestamp) => {
-                self.transactions.iter().filter(|(i, _)| **i != 1).count() as f32
-                    / max_timestamp as f32
-            }
-            None => 0.0,
+        if self.transactions.is_empty() {
+            return 0.0;
         }
+
+        let mut counter = HashMap::new();
+        self.transactions
+            .values()
+            .for_each(|t| *counter.entry(t.timestamp).or_default() += 1);
+
+        counter.values().sum::<usize>() as f32 / counter.len() as f32
     }
 }
 

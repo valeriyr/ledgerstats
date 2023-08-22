@@ -16,6 +16,20 @@ fn read_sample_db() {
 }
 
 #[test]
+fn read_db_with_empty_line_in_the_end() {
+    const DATABASE: &str = "2\n\
+                            1 1 0\n\
+                            1 2 0\n";
+
+    let mut transactions = Transactions::new();
+
+    transactions.insert(2, Transaction::new(1, 1, 0));
+    transactions.insert(3, Transaction::new(1, 2, 0));
+
+    assert_eq!(ledger::read_txs_from_db(DATABASE).unwrap(), transactions);
+}
+
+#[test]
 fn read_empty_db() {
     assert_eq!(
         ledger::read_txs_from_db("").unwrap_err(),

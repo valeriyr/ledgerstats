@@ -18,8 +18,8 @@ const DEFAULT_DB_FILE_PATH: &str = "./database.txt";
 
 fn main() -> Result<()> {
     let matches = clap_app!(ledgerstats =>
-        (version: "0.1.0")
-        (author: "Valerii Reutov")
+        (version: env!("CARGO_PKG_VERSION"))
+        (author: env!("CARGO_PKG_AUTHORS"))
         (about: "IOTA ledgerstats application parses a given transactions list in memory and returns relevant statistics.")
         (@arg DB_FILE_PATH: "path to a file containing a list of transactions")
     )
